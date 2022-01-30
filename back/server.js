@@ -1,6 +1,27 @@
 const express = require('express');
+// Pour lire les cookies
+const cookieParser = require('cookie-parser');
+const userRoutes = require('./routes/user.routes');
+require('dotenv').config({ path: './config/.env' });
+require('./config/db');
+const { checkUser, requireAuth } = require('./middleware/auth.middleware');
 const app = express();
 
-app.listen(5000, () => {
-    console.log('Listening on port 5000');
-})
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+// jwt à chaque requête
+app.get('*', checkUser);
+// Si token présent lors de l'authetification
+app.get('/jwtid', requireAuth, (req, res) => {
+	res.status(200).send(res.locals.user._id);
+});
+
+// routes
+app.use('/api/user', userRoutes);
+
+// server
+app.listen(process.env.PORT, () => {
+	console.log(`Listening on port ${process.env.PORT}`);
+});
