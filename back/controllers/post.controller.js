@@ -8,7 +8,7 @@ module.exports.readPost = (req, res) => {
 		console.log(docs);
 		if (!err) res.send(docs);
 		else console.log('Erreur, impossible de récuperer les données' + err);
-	});
+	}).sort({ createdAt: -1 });
 };
 
 module.exports.createPost = async (req, res) => {
@@ -108,6 +108,81 @@ module.exports.unlikePost = (req, res) => {
 			}
 		);
 	} catch (err) {
+		return res.status(400).send(err);
+	}
+};
+
+//----------------------------- COMMENTS -------------------------
+
+module.exports.commentPost = (req, res) => {
+	if (!objectId.isValid(req.params.id)) return res.status(400).send('ID iconnu :' + req.params.id);
+
+	try {
+		return PostModel.findOneAndUpdate(
+			req.params.id,
+			{
+				$push: {
+					comments: {
+						commenterId: req.body.commenterId,
+						commenterPseudo: req.body.commenterPseudo,
+						text: req.body.text,
+						timestamp: new Date().getTime(),
+					},
+				},
+			},
+			{ new: true },
+			(err, docs) => {
+				if (!err) return res.send(docs);
+				else return res.status(400).send(err);
+			}
+		);
+	} catch (err) {
+		res.status(400).send(err);
+	}
+};
+
+module.exports.editCommentPost = (req, res) => {
+	if (!objectId.isValid(req.params.id)) return res.status(400).send('ID iconnu :' + req.params.id);
+
+	try {
+		return PostModel.findById(
+			// On trouve l'id du commentaire et on le passe dans la requête
+			req.params.id,
+			(err, docs) => {
+				const theComment = docs.comments.find((comment) => comment._id.equals(req.body.commentId));
+				if (!theComment) return res.status(404).send('Commentaire introuvable');
+				theComment.text = req.body.text;
+				return docs.save((err) => {
+					if (!err) return res.status(200).send(docs);
+					return res.status(500).send(err);
+				});
+			}
+		);
+	} catch (err) {
+		return res.status(400).send(err);
+	}
+};
+
+module.exports.deleteCommentPost = (req, res) => {
+	if (!objectId.isValid(req.params.id)) return res.status(400).send('ID iconnu :' + req.params.id);
+
+	try {
+		return PostModel.findByIdAndUpdate(
+			req.params.id,
+			{
+				$pull: {
+					comments: {
+						_id: req.body.commentId,
+					},
+				},
+			},
+			{ new: true },
+			(err, docs) => {
+				if (!err) return res.send(docs);
+				else return res.status(500).send(err);
+			}
+		);
+	} catch {
 		return res.status(400).send(err);
 	}
 };
