@@ -52,7 +52,7 @@ module.exports.deleteUser = async (req, res) => {
 		await UserModel.deleteOne({ _id: req.params.id }).exec();
 		res.status(200).json({ message: 'Utilisateur supprimé' });
 	} catch (err) {
-		return res.status(500).json({ messsage: err });
+		return res.status(500).json({ message: err });
 	}
 };
 
