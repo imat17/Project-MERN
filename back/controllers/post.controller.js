@@ -48,3 +48,66 @@ module.exports.deletePost = (req, res) => {
 		else console.log('Impossible de supprimer le post' + err);
 	});
 };
+
+// ----------------------------- LIKE / UNLIKE -----------------------------
+
+module.exports.likePost = (req, res) => {
+	if (!objectId.isValid(req.params.id))
+		return res.status(400).send('ID unknown : ' + req.params.id);
+
+	try {
+		PostModel.findByIdAndUpdate(
+			req.params.id,
+			{
+				$addToSet: { likers: req.body.id },
+			},
+			{ new: true },
+			(err, docs) => {
+				if (err) return res.status(400).send(err);
+			}
+		);
+		UserModel.findByIdAndUpdate(
+			req.body.id,
+			{
+				$addToSet: { likes: req.params.id },
+			},
+			{ new: true },
+			(err, docs) => {
+				if (!err) res.send(docs);
+				else return res.status(400).send(err);
+			}
+		);
+	} catch (err) {
+		return res.status(400).send(err);
+	}
+};
+
+module.exports.unlikePost = (req, res) => {
+	if (!objectId.isValid(req.params.id)) return res.status(400).send('ID iconnu :' + req.params.id);
+
+	try {
+		PostModel.findByIdAndUpdate(
+			req.params.id,
+			{
+				$pull: { likers: req.body.id },
+			},
+			{ new: true },
+			(err, docs) => {
+				if (err) return res.status(400).send(err);
+			}
+		);
+		UserModel.findByIdAndUpdate(
+			req.body.id,
+			{
+				$pull: { likes: req.params.id },
+			},
+			{ new: true },
+			(err, docs) => {
+				if (!err) res.send(docs);
+				else return res.status(400).send(err);
+			}
+		);
+	} catch (err) {
+		return res.status(400).send(err);
+	}
+};
